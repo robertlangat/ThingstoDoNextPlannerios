@@ -1,0 +1,16 @@
+# Xcode
+*.xcodeproj/
+!*.xcodeproj/project.pbxproj
+xcuserdata/
+DerivedData/
+build/
+.build/
+.swiftpm/
+*.ipa
+*.xcarchive
+
+# Local secrets - never commit
+Config/Secrets.xcconfig
+GoogleService-Info.plist
+.env
+.DS_Store

@@ -27,6 +27,7 @@ jobs:
         run: |
           brew install xcodegen
           xcodegen generate
+          mkdir -p build out
 
       - name: Build for iOS Simulator (Debug, test ads)
         run: |

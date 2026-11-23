@@ -46,7 +46,7 @@ targets:
       - package: GoogleMobileAds
         product: GoogleMobileAds
       - package: GoogleUserMessagingPlatform
-        product: UserMessagingPlatform
+        product: GoogleUserMessagingPlatform
       - package: GoogleSignIn
         product: GoogleSignIn
       - target: ThingsToDoNextWidget

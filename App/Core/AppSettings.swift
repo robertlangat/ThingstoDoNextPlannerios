@@ -59,6 +59,16 @@ final class AppSettings: ObservableObject {
         lastSyncAt = (d.object(forKey: "lastSyncAt") as? Double).map(Date.init(timeIntervalSince1970:))
         lastSyncStatus = d.string(forKey: "lastSyncStatus")
         starterOffered = d.bool(forKey: "starterOffered")
+        if ScreenshotMode.isOn {
+            starterOffered = true; theme = .system; accentIndex = 0; focusDefault = false; remindersEnabled = true
+        }
+    }
+
+    /// The AI planner is offered only when a backend URL was configured for this build or entered by the user.
+    var aiAvailable: Bool { !aiBackendURL.trimmingCharacters(in: .whitespaces).isEmpty || Self.buildAIURL != nil }
+    static var buildAIURL: String? {
+        let s = (Bundle.main.object(forInfoDictionaryKey: "AIBackendURL") as? String ?? "").trimmingCharacters(in: .whitespaces)
+        return s.isEmpty ? nil : s
     }
 
     var allDayTime: LocalTime { LocalTime(minutes: allDayMinutes) }

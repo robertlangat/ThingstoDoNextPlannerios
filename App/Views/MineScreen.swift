@@ -49,9 +49,11 @@ struct MineScreen: View {
                         Label { VStack(alignment: .leading) { Text("Plan my day"); Text("Turn goals or a rough list into a schedule").font(.caption).foregroundStyle(.secondary) } }
                             icon: { Image(systemName: "sparkles") }
                     }
-                    NavigationLink { SettingsScreen() } label: {
-                        Label { VStack(alignment: .leading) { Text("Google Drive sync"); Text(syncText).font(.caption).foregroundStyle(.secondary) } }
-                            icon: { Image(systemName: "arrow.triangle.2.circlepath.icloud") }
+                    if DriveAuth.isConfigured || settings.driveSignedIn {
+                        NavigationLink { SettingsScreen() } label: {
+                            Label { VStack(alignment: .leading) { Text("Google Drive sync"); Text(syncText).font(.caption).foregroundStyle(.secondary) } }
+                                icon: { Image(systemName: "arrow.triangle.2.circlepath.icloud") }
+                        }
                     }
                     NavigationLink { SettingsScreen() } label: { Label("Settings", systemImage: "gearshape") }
                 }

@@ -58,6 +58,14 @@ struct RootView: View {
             })
         }
         .overlay(alignment: .bottom) { ToastView() }
+        .onAppear {
+            switch ScreenshotMode.scene {
+            case "calendar": tab = .calendar
+            case "mine": tab = .mine
+            case "editor": editor = EditorRequest(taskId: ScreenshotMode.reportId, occurrence: nil)
+            default: break
+            }
+        }
         .onChange(of: model.quickAddRequested) { _, requested in
             if requested { tab = .tasks; quickAdd = QuickAddRequest(); model.quickAddRequested = false }
         }

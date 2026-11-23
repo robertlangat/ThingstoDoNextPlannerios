@@ -1,0 +1,96 @@
+name: Upload to App Store Connect
+
+# Builds a signed Release archive (real ad units) and uploads it to App Store Connect / TestFlight.
+# Run manually from the Actions tab once these repository secrets exist (Settings -> Secrets and variables -> Actions):
+#   APPLE_TEAM_ID          10-character Team ID (developer.apple.com -> Membership)
+#   ASC_KEY_ID             App Store Connect API key ID        (Users and Access -> Integrations -> App Store Connect API, role: Admin)
+#   ASC_ISSUER_ID          Issuer ID shown on the same page
+#   ASC_KEY_P8             Full contents of the downloaded AuthKey_XXXX.p8 file
+# Optional: GOOGLE_IOS_CLIENT_ID, GOOGLE_REVERSED_CLIENT_ID (enables Drive sync), AI_BACKEND_URL (https://...)
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version shown on the App Store (e.g. 1.0.0)"
+        required: true
+        default: "1.0.0"
+
+jobs:
+  upload:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check secrets
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KEY: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+          P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          for v in TEAM KEY ISSUER P8; do
+            if [ -z "${!v}" ]; then echo "::error::Missing secret for $v - see the comment at the top of appstore.yml"; exit 1; fi
+          done
+
+      - name: Write signing key and build settings
+        env:
+          P8: ${{ secrets.ASC_KEY_P8 }}
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          GID: ${{ secrets.GOOGLE_IOS_CLIENT_ID }}
+          GRID: ${{ secrets.GOOGLE_REVERSED_CLIENT_ID }}
+          AIURL: ${{ secrets.AI_BACKEND_URL }}
+        run: |
+          mkdir -p ~/private_keys build
+          printf '%s\n' "$P8" > ~/private_keys/AuthKey.p8
+          {
+            echo "DEVELOPMENT_TEAM = $TEAM"
+            [ -n "$GID" ] && echo "GOOGLE_IOS_CLIENT_ID = $GID"
+            [ -n "$GRID" ] && echo "GOOGLE_REVERSED_CLIENT_ID = $GRID"
+            [ -n "$AIURL" ] && echo "AI_BACKEND_URL = ${AIURL/\/\//\/\$()\/}"
+            true
+          } > Config/Secrets.xcconfig
+          cat > build/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          PLIST
+
+      - name: Generate project
+        run: brew install xcodegen && xcodegen generate
+
+      - name: Archive (Release, real ads, automatic signing)
+        env:
+          KEY: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild -project ThingsToDoNext.xcodeproj -scheme ThingsToDoNext -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath build/ThingsToDoNext.xcarchive \
+            -allowProvisioningUpdates -authenticationKeyPath ~/private_keys/AuthKey.p8 \
+            -authenticationKeyID "$KEY" -authenticationKeyIssuerID "$ISSUER" \
+            MARKETING_VERSION="${{ inputs.version }}" CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            archive | xcbeautify
+
+      - name: Export and upload to App Store Connect
+        env:
+          KEY: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild -exportArchive -archivePath build/ThingsToDoNext.xcarchive \
+            -exportOptionsPlist build/ExportOptions.plist -exportPath build/export \
+            -allowProvisioningUpdates -authenticationKeyPath ~/private_keys/AuthKey.p8 \
+            -authenticationKeyID "$KEY" -authenticationKeyIssuerID "$ISSUER" | xcbeautify
+          echo "Uploaded version ${{ inputs.version }} (build ${{ github.run_number }}). It appears in App Store Connect -> TestFlight after processing (10-30 min)."
+
+      - name: Clean up key
+        if: always()
+        run: rm -rf ~/private_keys Config/Secrets.xcconfig

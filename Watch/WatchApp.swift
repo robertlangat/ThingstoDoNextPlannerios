@@ -22,6 +22,20 @@ final class WatchModel: NSObject, ObservableObject, WCSessionDelegate {
         super.init()
         if let d = defaults.data(forKey: "payload") { payload = WatchPayload.decode(d) }
         pending = Set(defaults.stringArray(forKey: "pending") ?? [])
+        if UserDefaults.standard.string(forKey: "ScreenshotScene") != nil {
+            // App Store screenshot mode (CI only): fixed demo data, no phone needed.
+            payload = WatchPayload(updatedAt: Date(), today: [
+                WatchTask(taskId: "1", date: nil, title: "Team stand-up", time: "9:30 AM", done: true, priority: 0, overdue: false),
+                WatchTask(taskId: "2", date: nil, title: "Finish quarterly report", time: "11:00 AM", done: false, priority: 3, overdue: false),
+                WatchTask(taskId: "3", date: nil, title: "Pay electricity bill", time: nil, done: false, priority: 3, overdue: false),
+                WatchTask(taskId: "4", date: nil, title: "Revise chapter 4", time: "5:30 PM", done: false, priority: 2, overdue: false),
+                WatchTask(taskId: "5", date: nil, title: "Gym - leg day", time: "7:00 PM", done: false, priority: 0, overdue: false),
+            ], upcoming: [
+                WatchTask(taskId: "6", date: nil, title: "Dentist appointment", time: "Wed 10:00 AM", done: false, priority: 0, overdue: false),
+            ])
+            reachable = true
+            return
+        }
         if WCSession.isSupported() {
             WCSession.default.delegate = self
             WCSession.default.activate()

@@ -71,12 +71,12 @@ struct SettingsScreen: View {
                 Text("Timing: iOS delivers reminders at the scheduled time. Focus modes and Notification Summary can delay or silence them. iOS keeps up to 64 scheduled reminders per app; the app tops them up automatically.")
             }
 
+            if DriveAuth.isConfigured || settings.driveSignedIn {
             Section {
                 if !settings.driveSignedIn {
                     Text("Optional. Back up and sync your tasks to a private app folder in your Google Drive. The app can't see your other Drive files. Works with the Android app too.")
                         .font(.footnote)
                     Button("Sign in with Google") { signIn() }.disabled(busy)
-                    if !DriveAuth.isConfigured { Text("Not available in this build yet: a Google iOS client ID is needed (see README).").font(.footnote).foregroundStyle(.secondary) }
                 } else {
                     Text("Signed in" + (settings.driveAccount.map { " as \($0)" } ?? ""))
                     Text((settings.lastSyncAt.map { "Last sync: " + $0.formatted(date: .abbreviated, time: .shortened) } ?? "Not synced yet")
@@ -96,12 +96,14 @@ struct SettingsScreen: View {
                     }
                 }
             } header: { Text("Google Drive sync") }
+            }
 
             Section {
                 Button("Export backup file") { exporting = true }
                 Button("Import backup file") { importing = true }
             } header: { Text("Backup file") } footer: { Text("Saved with the Files app picker. No storage permission needed.") }
 
+            if settings.aiAvailable {
             Section {
                 Toggle("Enable AI planner", isOn: $settings.aiEnabled)
                 TextField("Backend URL (https://…)", text: $aiURL)
@@ -111,6 +113,7 @@ struct SettingsScreen: View {
             } header: { Text("AI planner") } footer: {
                 Text("Uses your backend; you approve exactly what is sent each time. The offline planner always works.")
             }
+            }
 
             Section {
                 Text("This app is free and shows ads from Google AdMob. Your tasks are never sent to advertisers.").font(.footnote)
@@ -118,6 +121,8 @@ struct SettingsScreen: View {
             } header: { Text("Ads and privacy") }
 
             Section {
+                Link("Privacy policy", destination: URL(string: "https://robertlangat.github.io/ThingstoDoNextPlannerios/privacy-policy")!)
+                Link("Support", destination: URL(string: "https://robertlangat.github.io/ThingstoDoNextPlannerios/support")!)
                 Text("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")").foregroundStyle(.secondary)
             }
         }

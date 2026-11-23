@@ -1,0 +1,57 @@
+name: App Store assets
+
+# Builds the app for the simulator, captures real screenshots in "screenshot mode" (demo data,
+# no ads), adds captions, and publishes everything to the "store-assets" branch and release.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["App/**", "Shared/**", "Watch/**", "marketing/**", "project.yml", ".github/workflows/store-assets.yml"]
+
+jobs:
+  screenshots:
+    runs-on: macos-15
+    timeout-minutes: 75
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+          mkdir -p build store
+      - name: Build for simulators
+        run: |
+          set -o pipefail
+          xcodebuild -project ThingsToDoNext.xcodeproj -scheme ThingsToDoNext -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO build \
+            | tee build/sim.log | xcbeautify --quiet
+          ls build/sim/Build/Products
+      - name: Capture screenshots
+        run: marketing/capture.sh store/raw
+      - name: Add captions
+        run: |
+          python3 -m pip install --quiet --break-system-packages pillow || python3 -m pip install --quiet pillow
+          python3 marketing/compose.py store/raw store/framed
+          cp marketing/AppIcon-1024.png store/
+          cp marketing/AppStore/*.md store/ 2>/dev/null || true
+          (cd store && zip -qr ../app-store-assets.zip .)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-store-assets
+          path: store/
+      - name: Publish (store-assets branch + release)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete app-store-assets --cleanup-tag --yes || true
+          gh release create app-store-assets app-store-assets.zip --prerelease --target "$GITHUB_SHA" \
+            --title "App Store assets (icon, screenshots, listing text)" \
+            --notes "Icon (1024x1024), iPhone 6.9\" and iPad 13\" screenshots (raw and captioned), Apple Watch screenshot, and store listing text. Built from ${GITHUB_SHA::7}."
+          cd store
+          git init -q -b store-assets
+          git config user.name "github-actions"; git config user.email "github-actions@users.noreply.github.com"
+          git add -A && git commit -qm "App Store assets from ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" store-assets

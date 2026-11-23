@@ -17,6 +17,13 @@ struct PlannerScreen: View {
             }
         }
         .navigationTitle("Plan my day")
+        .onAppear {
+            if ScreenshotMode.scene == "planner" && p.draft == nil {
+                p.input = ScreenshotMode.plannerPrompt
+                p.includeUndated = false
+                p.planOffline(model)
+            }
+        }
         .alert("Send to AI planner?", isPresented: Binding(get: { p.pendingPayload != nil }, set: { if !$0 { p.pendingPayload = nil } })) {
             Button("Send") { Task { await p.sendAI(model) } }
             Button("Cancel", role: .cancel) { p.pendingPayload = nil }
@@ -38,8 +45,10 @@ struct PlannerScreen: View {
             Toggle("Also plan my undated open tasks", isOn: $p.includeUndated)
         }
         Section {
-            Picker("Planner", selection: $p.mode) { ForEach(PlannerMode.allCases) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented)
-            if p.mode == .ai {
+            if settings.aiAvailable {
+                Picker("Planner", selection: $p.mode) { ForEach(PlannerMode.allCases) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented)
+            }
+            if p.mode == .ai && settings.aiAvailable {
                 if !settings.aiEnabled || settings.aiBackendURL.isEmpty {
                     Text("The AI planner is off. Turn it on and set a backend URL in Settings → AI planner. The offline planner always works.")
                         .font(.footnote)

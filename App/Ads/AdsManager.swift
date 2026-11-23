@@ -40,6 +40,7 @@ final class AdsManager: NSObject, ObservableObject, FullScreenContentDelegate {
     }
 
     func gatherConsent() {
+        if ScreenshotMode.isOn { return } // store screenshots show no ads or prompts
         // Consent from a previous launch lets ads start straight away.
         startIfAllowed()
         ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters()) { [weak self] _ in

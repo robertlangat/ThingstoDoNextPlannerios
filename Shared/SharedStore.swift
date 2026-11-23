@@ -22,7 +22,7 @@ final class SharedStore: @unchecked Sendable {
         let base = fm.containerURL(forSecurityApplicationGroupIdentifier: AppGroup.id)
             ?? fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         try? fm.createDirectory(at: base, withIntermediateDirectories: true)
-        fileURL = base.appendingPathComponent("database.json")
+        fileURL = base.appendingPathComponent(ScreenshotMode.isOn ? "database-screenshots.json" : "database.json")
         let defaults = AppGroup.defaults
         if let id = defaults.string(forKey: "deviceId") {
             deviceId = id
@@ -32,6 +32,7 @@ final class SharedStore: @unchecked Sendable {
             deviceId = id
         }
         clock = HybridLogicalClock()
+        if ScreenshotMode.isOn { save(ScreenshotMode.demoDatabase()) }
         clock.observe(TaskOperations.maxVersion(load()))
     }
 

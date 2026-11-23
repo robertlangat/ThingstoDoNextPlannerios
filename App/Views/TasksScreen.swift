@@ -64,6 +64,10 @@ struct TasksScreen: View {
             }
             .navigationDestination(isPresented: $showPlanner) { PlannerScreen() }
             .rowActionSheets(actions)
+            .onAppear {
+                if ScreenshotMode.scene == "focus" { focusMode = true }
+                if ScreenshotMode.scene == "planner" { showPlanner = true }
+            }
             .onChange(of: view) { _, v in if case .list(let id) = v { currentList = id } else { currentList = nil } }
             .onChange(of: model.data.lists.map(\.id)) { _, ids in
                 if case .list(let id) = view, !ids.contains(id) { view = .today }

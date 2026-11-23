@@ -1,0 +1,160 @@
+# XcodeGen spec. Generate the Xcode project with:  brew install xcodegen && xcodegen generate
+name: ThingsToDoNext
+
+options:
+  bundleIdPrefix: com.robertlangat
+  deploymentTarget:
+    iOS: "17.0"
+    watchOS: "10.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+
+configFiles:
+  Debug: Config/Base.xcconfig
+  Release: Config/Base.xcconfig
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+
+packages:
+  PlannerCore:
+    path: Packages/PlannerCore
+  GoogleMobileAds:
+    url: https://github.com/googleads/swift-package-manager-google-mobile-ads.git
+    from: "12.0.0"
+  GoogleUserMessagingPlatform:
+    url: https://github.com/googleads/swift-package-manager-google-user-messaging-platform.git
+    from: "3.0.0"
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS.git
+    from: "8.0.0"
+
+targets:
+  ThingsToDoNext:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - Shared
+    dependencies:
+      - package: PlannerCore
+      - package: GoogleMobileAds
+        product: GoogleMobileAds
+      - package: GoogleUserMessagingPlatform
+        product: UserMessagingPlatform
+      - package: GoogleSignIn
+        product: GoogleSignIn
+      - target: ThingsToDoNextWidget
+        embed: true
+      - target: ThingsToDoNextWatch
+        embed: true
+        copy:
+          destination: productsDirectory
+          subpath: "$(CONTENTS_FOLDER_PATH)/Watch"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.robertlangat.thingstodonext
+        PRODUCT_NAME: ThingsToDoNext
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        OTHER_LDFLAGS: -ObjC
+      configs:
+        # Debug builds use Google's TEST ad units so testing never counts as invalid traffic.
+        Debug:
+          ADMOB_BANNER_ID: ca-app-pub-3940256099942544/2435281174
+          ADMOB_INTERSTITIAL_ID: ca-app-pub-3940256099942544/4411468910
+        Release:
+          ADMOB_BANNER_ID: ca-app-pub-8306955081407788/6084594329
+          ADMOB_INTERSTITIAL_ID: ca-app-pub-8306955081407788/8783356966
+    entitlements:
+      path: App/ThingsToDoNext.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.robertlangat.thingstodonext
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Things to Do Next Planner
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UIBackgroundModes: [fetch]
+        BGTaskSchedulerPermittedIdentifiers: [com.robertlangat.thingstodonext.refresh]
+        CFBundleURLTypes:
+          - CFBundleURLName: com.robertlangat.thingstodonext
+            CFBundleURLSchemes: [thingstodonext, $(GOOGLE_REVERSED_CLIENT_ID)]
+        GIDClientID: $(GOOGLE_IOS_CLIENT_ID)
+        AIBackendURL: $(AI_BACKEND_URL)
+        AIAppToken: $(AI_APP_TOKEN)
+        # AdMob
+        GADApplicationIdentifier: ca-app-pub-8306955081407788~6611207934
+        AdMobBannerID: $(ADMOB_BANNER_ID)
+        AdMobInterstitialID: $(ADMOB_INTERSTITIAL_ID)
+        NSUserTrackingUsageDescription: "This lets Google show you more relevant ads. Your tasks are never shared with advertisers."
+        SKAdNetworkItems:
+          - SKAdNetworkIdentifier: cstr6suwn9.skadnetwork
+        # Only used if you tap "Add to device calendar"; iOS 17 doesn't ask when the system editor is used.
+        NSCalendarsWriteOnlyAccessUsageDescription: "Adds the task to your calendar when you ask it to."
+        ITSAppUsesNonExemptEncryption: false
+    scheme:
+      testTargets: []
+      gatherCoverageData: false
+
+  ThingsToDoNextWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Widget
+      - Shared
+    dependencies:
+      - package: PlannerCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.robertlangat.thingstodonext.widget
+        PRODUCT_NAME: ThingsToDoNextWidget
+        TARGETED_DEVICE_FAMILY: "1,2"
+    entitlements:
+      path: Widget/ThingsToDoNextWidget.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.robertlangat.thingstodonext
+    info:
+      path: Widget/Info.plist
+      properties:
+        CFBundleDisplayName: Things to Do Next
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+
+  ThingsToDoNextWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - Watch
+    dependencies:
+      - package: PlannerCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.robertlangat.thingstodonext.watchkitapp
+        PRODUCT_NAME: ThingsToDoNextWatch
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "4"
+    info:
+      path: Watch/Info.plist
+      properties:
+        CFBundleDisplayName: Things to Do Next
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        WKApplication: true
+        WKCompanionAppBundleIdentifier: com.robertlangat.thingstodonext

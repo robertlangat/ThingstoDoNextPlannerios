@@ -1,0 +1,9 @@
+// Shared build settings. Real values go in Config/Secrets.xcconfig (git-ignored); see Config/Secrets.example.xcconfig.
+// Note: in .xcconfig files "//" starts a comment, so write URLs as https:/$()/example.com
+
+GOOGLE_IOS_CLIENT_ID = PLACEHOLDER.apps.googleusercontent.com
+GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.PLACEHOLDER
+AI_BACKEND_URL =
+AI_APP_TOKEN =
+
+#include? "Secrets.xcconfig"

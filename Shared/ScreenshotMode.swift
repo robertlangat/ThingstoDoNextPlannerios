@@ -44,8 +44,9 @@ enum ScreenshotMode {
         _ = add(TaskDraft(title: "Gym - leg day", listId: fitness, dueDate: t, dueTime: LocalTime(19, 0),
                           rule: RecurrenceRule(.WEEKLY), estimatedMinutes: 60))
         _ = add(TaskDraft(title: "Call Mum", listId: personal, dueDate: t), done: true)
-        _ = add(TaskDraft(title: "Read 20 pages", listId: study, dueDate: t.plusDays(-10), dueTime: LocalTime(21, 0),
-                          rule: RecurrenceRule(.DAILY), reminderOffsets: [0]))
+        let reading = add(TaskDraft(title: "Read 20 pages", listId: study, dueDate: t.plusDays(-10), dueTime: LocalTime(21, 0),
+                                    rule: RecurrenceRule(.DAILY), reminderOffsets: [0]))
+        for back in 1...10 where back != 3 { ops.setCompleted(reading, occurrence: t.plusDays(-back), completed: true, in: &db) }
         _ = add(TaskDraft(title: "Renew car insurance", listId: personal, priority: 2, dueDate: t.plusDays(-1)))
         _ = add(TaskDraft(title: "Buy groceries", listId: personal, dueDate: t.plusDays(1), dueTime: LocalTime(18, 0),
                           estimatedMinutes: 45, subtasks: [SubtaskDraft(title: "Milk"), SubtaskDraft(title: "Eggs"), SubtaskDraft(title: "Bread")]))
@@ -54,8 +55,11 @@ enum ScreenshotMode {
                           rule: RecurrenceRule(.YEARLY), reminderOffsets: [1440]))
         _ = add(TaskDraft(title: "Book flights to Mombasa", listId: personal, priority: 1, dueDate: t.plusDays(6)))
         _ = add(TaskDraft(title: "Client presentation", listId: work, priority: 3, dueDate: t.plusDays(8), dueTime: LocalTime(14, 0)))
-        _ = add(TaskDraft(title: "Water the plants", listId: personal, dueDate: t.plusDays(-3), rule: RecurrenceRule(.DAILY, interval: 3)))
-        _ = add(TaskDraft(title: "Pay rent", listId: personal, priority: 3, dueDate: LocalDate(t.year, t.month, 1), rule: RecurrenceRule(.MONTHLY)))
+        let plants = add(TaskDraft(title: "Water the plants", listId: personal, dueDate: t.plusDays(-3), rule: RecurrenceRule(.DAILY, interval: 3)))
+        ops.setCompleted(plants, occurrence: t.plusDays(-3), completed: true, in: &db)
+        let rentStart = LocalDate(t.year, t.month, 1)
+        let rent = add(TaskDraft(title: "Pay rent", listId: personal, priority: 3, dueDate: rentStart, rule: RecurrenceRule(.MONTHLY)))
+        if rentStart < t { ops.setCompleted(rent, occurrence: rentStart, completed: true, in: &db) }
         _ = add(TaskDraft(title: "Plan weekend hike", listId: fitness, starred: true))
         _ = add(TaskDraft(title: "Mock exam", listId: study, priority: 2, dueDate: t.plusDays(12), dueTime: LocalTime(9, 0)))
         return db

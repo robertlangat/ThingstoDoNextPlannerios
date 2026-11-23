@@ -271,6 +271,8 @@ final class ViewTests: XCTestCase {
         let data = makeData()
         let sections = Dictionary(uniqueKeysWithValues: TaskViews.build(.today, data, today: today, query: "", filters: Filters()).map { ($0.title ?? "", $0.items.map(\.task.id)) })
         XCTAssertTrue(sections["Overdue"]!.contains("late"))
+        // the daily task missed on 5 days shows up once
+        XCTAssertEqual(sections["Overdue"]!.filter { $0 == "daily" }.count, 1)
         XCTAssertEqual(sections["Today"], ["today"])
         XCTAssertEqual(Set(sections["Done today"]!), ["done", "daily"])
         XCTAssertFalse(TaskViews.build(.inbox, data, today: today, query: "", filters: Filters())[0].items.contains { $0.task.id == "daily" })

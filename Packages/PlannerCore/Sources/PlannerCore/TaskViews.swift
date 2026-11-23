@@ -94,7 +94,7 @@ public enum TaskViews {
             return [TaskSection(title: nil, items: AppData.sort(apply(candidates(data, today, filters.status).filter { $0.task.starred }, filters, today)))]
         case .today:
             let todays = data.occurrences(from: today, to: today)
-            let overdue = data.occurrences(from: today.plusDays(-30), to: today.plusDays(-1)).filter { !$0.completed }
+            let overdue = latestMissedPerTask(data.occurrences(from: today.plusDays(-30), to: today.plusDays(-1)).filter { !$0.completed })
             let showDone = filters.status != .open
             var out: [TaskSection] = []
             let o = AppData.sort(apply(overdue, anyStatus, today))
@@ -121,9 +121,22 @@ public enum TaskViews {
         }
     }
 
+    /// A repeating task appears once in Overdue (its most recent missed day), so a missed daily
+    /// habit doesn't flood the list. Each occurrence still counts separately in progress stats.
+    public static func latestMissedPerTask(_ items: [TaskOccurrence]) -> [TaskOccurrence] {
+        var latest: [String: TaskOccurrence] = [:]
+        var oneOffs: [TaskOccurrence] = []
+        for o in items {
+            if !o.task.isRecurring { oneOffs.append(o); continue }
+            if let cur = latest[o.task.id], let cd = cur.date, let od = o.date, cd >= od { continue }
+            latest[o.task.id] = o
+        }
+        return oneOffs + Array(latest.values)
+    }
+
     /// Focus view: up to three open tasks for today/overdue (plus important undated), by priority.
     public static func focus(_ data: AppData, today: LocalDate) -> [TaskOccurrence] {
-        let due = data.occurrences(from: today.plusDays(-30), to: today).filter { !$0.completed }
+        let due = latestMissedPerTask(data.occurrences(from: today.plusDays(-30), to: today).filter { !$0.completed })
         let undated = data.tasks.filter { $0.dueDate == nil && !$0.completed && ($0.priority >= 2 || $0.starred) }.map { data.occurrence($0, nil) }
         return Array((due + undated).sorted { a, b in
             if a.task.priority != b.task.priority { return a.task.priority > b.task.priority }

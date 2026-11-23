@@ -42,6 +42,10 @@ final class OperationsTests: XCTestCase {
         let slots = alarms.map { "\($0.occurrenceDate)#\($0.key.split(separator: "#").last!)" }
         XCTAssertEqual(slots.count, Set(slots).count)
         XCTAssertEqual(AppData(db).tasks.count, 3)
+        // The single-occurrence copy keeps that occurrence's date when the start date wasn't changed.
+        let detached = try XCTUnwrap(AppData(db).tasks.first { $0.title == "Moved once" })
+        XCTAssertEqual(detached.dueDate, today.plusDays(1))
+        XCTAssertNil(detached.rrule)
     }
 
     func testSyncedDeletionStaysDeletedAndRestoreDoesNotDuplicate() {

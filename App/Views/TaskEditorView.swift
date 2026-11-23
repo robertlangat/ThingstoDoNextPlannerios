@@ -67,7 +67,7 @@ struct TaskEditorView: View {
                         if on { draft.dueDate = draft.dueDate ?? model.today } else { draft.dueDate = nil; draft.dueTime = nil; draft.rule = nil; draft.reminderOffsets = [] }
                     }))
                     if let due = draft.dueDate {
-                        DatePicker("Due", selection: Binding(get: { due.asDate }, set: { draft.dueDate = LocalDate($0) }), displayedComponents: .date)
+                        DatePicker(draft.rule == nil ? "Due" : "Starts", selection: Binding(get: { due.asDate }, set: { draft.dueDate = LocalDate($0) }), displayedComponents: .date)
                         Toggle("Time (off = all day)", isOn: Binding(get: { draft.dueTime != nil }, set: { draft.dueTime = $0 ? (draft.dueTime ?? LocalTime(9, 0)) : nil }))
                         if let t = draft.dueTime {
                             DatePicker("Time", selection: Binding(get: { t.asDate }, set: { draft.dueTime = LocalTime($0) }), displayedComponents: .hourAndMinute)

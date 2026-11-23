@@ -146,13 +146,11 @@ public struct TaskOperations: Sendable {
             if wasRecurring { pruneOrphanCompletions(id, in: &db) }
             return
         }
+        // The editor shows the series' start date. If the user left it alone, the edited copy keeps
+        // this occurrence's own date; if they changed it, their date wins.
+        let targetDate = (d.dueDate == nil || d.dueDate == start) ? occ : d.dueDate!
         if scope == .thisOccurrence {
-            cur.rrule = rule.withExDate(occ).format()
-            db.tasks.upsert(stamp(cur))
-            var single = d; single.rule = nil; single.dueDate = d.dueDate ?? occ
-            let wasDone = db.occurrences.contains { $0.taskId == id && $0.date == occ && $0.completed && !$0.deleted }
-            create(single, in: &db, seriesParentId: id, completed: wasDone)
-            moveCompletions(from: id, to: nil, dates: [occ], in: &db)
+            detachOccurrence(id, rule: rule, occ: occ, draft: d, date: targetDate, in: &db)
             return
         }
         let (old, newRule) = RecurrenceEngine.split(start, rule, at: occ)
@@ -165,7 +163,7 @@ public struct TaskOperations: Sendable {
         cur.rrule = oldRule.format()
         db.tasks.upsert(stamp(cur))
         var future = d
-        future.dueDate = d.dueDate ?? occ
+        future.dueDate = targetDate
         if let r = d.rule {
             var normalised = r; normalised.end = rule.end; normalised.exDates = rule.exDates
             future.rule = normalised == rule ? newRule : r
@@ -173,6 +171,17 @@ public struct TaskOperations: Sendable {
         let newId = create(future, in: &db, seriesParentId: id)
         let moved = Set(db.occurrences.filter { $0.taskId == id && !$0.deleted && $0.date >= occ }.map(\.date))
         moveCompletions(from: id, to: future.dueDate == occ ? newId : nil, dates: moved, in: &db)
+    }
+
+    /// Removes [occ] from the series and creates a standalone task on [date] with the edits.
+    func detachOccurrence(_ id: String, rule: RecurrenceRule, occ: LocalDate, draft d: TaskDraft, date: LocalDate, in db: inout Database) {
+        guard var cur = db.tasks.find(id) else { return }
+        cur.rrule = rule.withExDate(occ).format()
+        db.tasks.upsert(stamp(cur))
+        var single = d; single.rule = nil; single.dueDate = date
+        let wasDone = db.occurrences.contains { $0.taskId == id && $0.date == occ && $0.completed && !$0.deleted }
+        create(single, in: &db, seriesParentId: id, completed: wasDone)
+        moveCompletions(from: id, to: nil, dates: [occ], in: &db)
     }
 
     func pruneOrphanCompletions(_ id: String, in db: inout Database) {
@@ -282,9 +291,8 @@ public struct TaskOperations: Sendable {
     /// Moves a one-off task, or a single occurrence of a recurring task, to [newDate] (nil = undated).
     public func reschedule(_ id: String, occurrence: LocalDate?, to newDate: LocalDate?, in db: inout Database) {
         guard var t = db.tasks.find(id) else { return }
-        if t.isRecurring, let occ = occurrence, var d = draft(of: id, in: db) {
-            d.rule = nil; d.dueDate = newDate ?? occ
-            update(id, d, scope: .thisOccurrence, occurrence: occ, in: &db)
+        if let rule = t.rule, let occ = occurrence, let d = draft(of: id, in: db) {
+            detachOccurrence(id, rule: rule, occ: occ, draft: d, date: newDate ?? occ, in: &db)
             return
         }
         t.dueDate = newDate

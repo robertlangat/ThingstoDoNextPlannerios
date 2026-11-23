@@ -29,6 +29,43 @@ Every push to `main` builds on GitHub's macOS machines and publishes the
 For TestFlight or the App Store you need an Apple Developer account ($99/year); see "Signing"
 below.
 
+## Publishing to the App Store
+
+Everything for the listing is generated automatically:
+
+- **[`store-assets` branch](../../tree/store-assets)** and the **app-store-assets** release contain
+  the 1024×1024 icon, captioned and plain screenshots for iPhone 6.9" (1320×2868), iPad 13"
+  (2064×2752) and Apple Watch (416×496). They're captured from the real app by
+  `.github/workflows/store-assets.yml`, using screenshot mode with demo data and no ads.
+- **[`marketing/AppStore/listing.md`](marketing/AppStore/listing.md)** holds the name, subtitle,
+  description, keywords, privacy-label answers, age rating and review notes.
+- **Privacy policy and support pages** are in `docs/`, served by GitHub Pages.
+
+Checklist:
+
+1. **GitHub Pages**: go to repo **Settings → Pages**, set Source to "Deploy from a branch", choose
+   `main` / `/docs`, and save. The privacy policy then lives at
+   `https://robertlangat.github.io/ThingstoDoNextPlannerios/privacy-policy`.
+2. **Apple Developer Program**: enrol at developer.apple.com ($99/year).
+3. **App Store Connect → Apps → +**: create a New App. Platform iOS, name
+   "Things to Do Next Planner", bundle ID `com.robertlangat.thingstodonext` (register it first
+   under Certificates, Identifiers & Profiles if it isn't listed), and SKU `thingstodonext-ios-001`.
+4. **App Group**: under Identifiers → App Groups, create `group.com.robertlangat.thingstodonext`.
+   Enable it on the app ID and on `com.robertlangat.thingstodonext.widget`. Also register
+   `com.robertlangat.thingstodonext.watchkitapp`.
+5. **API key for CI uploads**: in App Store Connect → Users and Access → Integrations → App Store
+   Connect API, create a key with the **Admin** role and download the `.p8` file. In GitHub, go to
+   **Settings → Secrets and variables → Actions** and add `APPLE_TEAM_ID`, `ASC_KEY_ID`,
+   `ASC_ISSUER_ID` and `ASC_KEY_P8` (paste the whole `.p8` file).
+6. **Upload**: go to **Actions → Upload to App Store Connect → Run workflow** and enter a version
+   (e.g. `1.0.0`). It archives the Release build (real ad units), signs it automatically and
+   uploads it. After 10–30 minutes of processing, it shows up in TestFlight.
+7. **Listing**: fill in the version page from `listing.md` and upload the screenshots from
+   `framed/`. Pick the build, answer the privacy, age-rating and IDFA questions as `listing.md`
+   describes, and **Submit for Review**.
+8. **AdMob**: link the app in AdMob once it's live, publish the GDPR and IDFA messages under
+   Privacy & messaging, and host `app-ads.txt` on your developer website.
+
 ## Build on a Mac
 
 ```bash

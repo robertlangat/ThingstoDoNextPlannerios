@@ -12,8 +12,8 @@ public protocol Versioned {
 public struct TaskList: Codable, Hashable, Identifiable, Versioned, Sendable {
     public var id: String
     public var name: String
-    /// ARGB, same as Android.
-    public var color: Int?
+    /// ARGB, same as Android (64-bit so it fits on 32-bit Apple Watch hardware too).
+    public var color: Int64?
     public var icon: String?
     public var sortOrder: Int
     public var version: Int64
@@ -21,7 +21,7 @@ public struct TaskList: Codable, Hashable, Identifiable, Versioned, Sendable {
     public var deleted = false
     public var seenDeleteVersion: Int64 = 0
 
-    public init(id: String, name: String, color: Int?, icon: String?, sortOrder: Int, version: Int64, deviceId: String) {
+    public init(id: String, name: String, color: Int64?, icon: String?, sortOrder: Int, version: Int64, deviceId: String) {
         self.id = id; self.name = name; self.color = color; self.icon = icon; self.sortOrder = sortOrder
         self.version = version; self.deviceId = deviceId
     }
@@ -115,28 +115,28 @@ public enum SyncMapping {
         var out: [SyncRecord] = []
         for l in db.lists {
             out.append(SyncRecord(type: list, id: l.id, version: l.version, deviceId: l.deviceId, deleted: l.deleted, data: [
-                "name": .string(l.name), "color": .from(l.color), "icon": .from(l.icon), "sortOrder": .int(l.sortOrder),
+                "name": .string(l.name), "color": .from(l.color), "icon": .from(l.icon), "sortOrder": .from(l.sortOrder),
             ], seenDeleteVersion: l.seenDeleteVersion))
         }
         for t in db.tasks {
             out.append(SyncRecord(type: task, id: t.id, version: t.version, deviceId: t.deviceId, deleted: t.deleted, data: [
-                "listId": .from(t.listId), "title": .string(t.title), "notes": .string(t.notes), "priority": .int(t.priority),
+                "listId": .from(t.listId), "title": .string(t.title), "notes": .string(t.notes), "priority": .from(t.priority),
                 "starred": .bool(t.starred), "dueDate": .from(t.dueDate?.epochDay), "dueTimeMinutes": .from(t.dueTime?.minutes),
-                "rrule": .from(t.rrule), "completed": .bool(t.completed), "completedAt": .from(t.completedAt.map { Int($0) }),
+                "rrule": .from(t.rrule), "completed": .bool(t.completed), "completedAt": .from(t.completedAt),
                 "reminderOffsets": .string(t.reminderOffsets.map(String.init).joined(separator: ",")),
                 "estimatedMinutes": .from(t.estimatedMinutes), "seriesParentId": .from(t.seriesParentId),
-                "createdAt": .int(Int(t.createdAt)), "sortOrder": .int(Int(t.sortOrder)),
+                "createdAt": .int(t.createdAt), "sortOrder": .int(t.sortOrder),
             ], seenDeleteVersion: t.seenDeleteVersion))
         }
         for s in db.subtasks {
             out.append(SyncRecord(type: subtask, id: s.id, version: s.version, deviceId: s.deviceId, deleted: s.deleted, data: [
-                "taskId": .string(s.taskId), "title": .string(s.title), "done": .bool(s.done), "sortOrder": .int(s.sortOrder),
+                "taskId": .string(s.taskId), "title": .string(s.title), "done": .bool(s.done), "sortOrder": .from(s.sortOrder),
             ], seenDeleteVersion: s.seenDeleteVersion))
         }
         for o in db.occurrences {
             out.append(SyncRecord(type: occurrence, id: o.id, version: o.version, deviceId: o.deviceId, deleted: o.deleted, data: [
-                "taskId": .string(o.taskId), "date": .int(o.date.epochDay), "completed": .bool(o.completed),
-                "completedAt": .from(o.completedAt.map { Int($0) }),
+                "taskId": .string(o.taskId), "date": .from(o.date.epochDay), "completed": .bool(o.completed),
+                "completedAt": .from(o.completedAt),
             ], seenDeleteVersion: o.seenDeleteVersion))
         }
         return out
@@ -152,14 +152,14 @@ public enum SyncMapping {
             switch r.type {
             case list:
                 guard let name = d["name"]?.string else { continue }
-                var l = TaskList(id: r.id, name: name, color: d["color"]?.int, icon: d["icon"]?.string,
+                var l = TaskList(id: r.id, name: name, color: d["color"]?.int64, icon: d["icon"]?.string,
                                  sortOrder: d["sortOrder"]?.int ?? 0, version: r.version, deviceId: r.deviceId)
                 l.deleted = r.deleted; l.seenDeleteVersion = r.seenDeleteVersion
                 upsert(&db.lists, l)
             case task:
                 guard let title = d["title"]?.string else { continue }
                 var t = TaskItem(id: r.id, listId: d["listId"]?.string, title: title,
-                                 createdAt: Int64(d["createdAt"]?.int ?? 0), version: r.version, deviceId: r.deviceId)
+                                 createdAt: d["createdAt"]?.int64 ?? 0, version: r.version, deviceId: r.deviceId)
                 t.notes = d["notes"]?.string ?? ""
                 t.priority = d["priority"]?.int ?? 0
                 t.starred = d["starred"]?.bool ?? false
@@ -167,11 +167,11 @@ public enum SyncMapping {
                 t.dueTime = d["dueTimeMinutes"]?.int.map(LocalTime.init(minutes:))
                 t.rrule = d["rrule"]?.string
                 t.completed = d["completed"]?.bool ?? false
-                t.completedAt = d["completedAt"]?.int.map(Int64.init)
+                t.completedAt = d["completedAt"]?.int64
                 t.reminderOffsets = (d["reminderOffsets"]?.string ?? "").split(separator: ",").compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }
                 t.estimatedMinutes = d["estimatedMinutes"]?.int
                 t.seriesParentId = d["seriesParentId"]?.string
-                t.sortOrder = Int64(d["sortOrder"]?.int ?? 0)
+                t.sortOrder = d["sortOrder"]?.int64 ?? 0
                 t.deleted = r.deleted; t.seenDeleteVersion = r.seenDeleteVersion
                 upsert(&db.tasks, t)
             case subtask:
@@ -183,7 +183,7 @@ public enum SyncMapping {
             case occurrence:
                 guard let taskId = d["taskId"]?.string, let day = d["date"]?.int else { continue }
                 var o = Occurrence(taskId: taskId, date: LocalDate(epochDay: day), completed: d["completed"]?.bool ?? false,
-                                   completedAt: d["completedAt"]?.int.map(Int64.init), version: r.version, deviceId: r.deviceId)
+                                   completedAt: d["completedAt"]?.int64, version: r.version, deviceId: r.deviceId)
                 o.id = r.id
                 o.deleted = r.deleted; o.seenDeleteVersion = r.seenDeleteVersion
                 upsert(&db.occurrences, o)

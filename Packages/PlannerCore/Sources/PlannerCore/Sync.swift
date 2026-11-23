@@ -131,14 +131,14 @@ public enum SnapshotCodec {
     public static func encode(_ s: SyncSnapshot) -> Data {
         let records: [JSONValue] = s.records.map {
             .object([
-                "type": .string($0.type), "id": .string($0.id), "version": .int(Int($0.version)),
+                "type": .string($0.type), "id": .string($0.id), "version": .int($0.version),
                 "deviceId": .string($0.deviceId), "deleted": .bool($0.deleted),
-                "seenDeleteVersion": .int(Int($0.seenDeleteVersion)), "data": .object($0.data),
+                "seenDeleteVersion": .int($0.seenDeleteVersion), "data": .object($0.data),
             ])
         }
         let root = JSONValue.object([
-            "schemaVersion": .int(s.schemaVersion), "generatedBy": .string(s.generatedBy),
-            "generatedAt": .int(Int(s.generatedAt)), "records": .array(records),
+            "schemaVersion": .int(Int64(s.schemaVersion)), "generatedBy": .string(s.generatedBy),
+            "generatedAt": .int(s.generatedAt), "records": .array(records),
         ])
         return Data(root.encodedString().utf8)
     }
@@ -148,11 +148,11 @@ public enum SnapshotCodec {
         if schema > SyncSnapshot.currentSchema { throw CodecError.newerSchema(schema) }
         let records: [SyncRecord] = (root["records"]?.array ?? []).compactMap { v in
             guard let o = v.object, let type = o["type"]?.string, let id = o["id"]?.string else { return nil }
-            return SyncRecord(type: type, id: id, version: Int64(o["version"]?.int ?? 0), deviceId: o["deviceId"]?.string ?? "",
+            return SyncRecord(type: type, id: id, version: o["version"]?.int64 ?? 0, deviceId: o["deviceId"]?.string ?? "",
                               deleted: o["deleted"]?.bool ?? false, data: o["data"]?.object ?? [:],
-                              seenDeleteVersion: Int64(o["seenDeleteVersion"]?.int ?? 0))
+                              seenDeleteVersion: o["seenDeleteVersion"]?.int64 ?? 0)
         }
         return SyncSnapshot(schemaVersion: schema, generatedBy: root["generatedBy"]?.string ?? "",
-                            generatedAt: Int64(root["generatedAt"]?.int ?? 0), records: records)
+                            generatedAt: root["generatedAt"]?.int64 ?? 0, records: records)
     }
 }

@@ -53,7 +53,7 @@ enum Fmt {
         }
     }
 
-    static func color(_ argb: Int?) -> Color {
+    static func color(_ argb: Int64?) -> Color {
         guard let argb else { return .secondary }
         let r = Double((argb >> 16) & 0xFF) / 255, g = Double((argb >> 8) & 0xFF) / 255, b = Double(argb & 0xFF) / 255
         return Color(red: r, green: g, blue: b)
@@ -75,5 +75,5 @@ enum Fmt {
     }
 
     static let iconKeys = ["personal", "work", "study", "fitness", "travel", "wishlist", "family", "home", "shopping"]
-    static let listColors: [Int] = [0xFF5C6BC0, 0xFF00897B, 0xFF8E24AA, 0xFFE53935, 0xFF039BE5, 0xFFF4511E, 0xFFD81B60, 0xFF7CB342, 0xFF6D4C41]
+    static let listColors: [Int64] = [0xFF5C6BC0, 0xFF00897B, 0xFF8E24AA, 0xFFE53935, 0xFF039BE5, 0xFFF4511E, 0xFFD81B60, 0xFF7CB342, 0xFF6D4C41]
 }

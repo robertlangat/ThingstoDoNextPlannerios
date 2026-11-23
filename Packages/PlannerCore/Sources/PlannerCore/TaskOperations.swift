@@ -51,7 +51,7 @@ public struct UndoToken: Sendable {
     public var createdTaskIds: [String] = []
 }
 
-public struct StarterList: Sendable { public let key: String; public let name: String; public let color: Int }
+public struct StarterList: Sendable { public let key: String; public let name: String; public let color: Int64 }
 
 public let starterLists: [StarterList] = [
     .init(key: "personal", name: "Personal", color: 0xFF5C6BC0), .init(key: "work", name: "Work", color: 0xFF00897B),
@@ -303,7 +303,7 @@ public struct TaskOperations: Sendable {
     // MARK: lists
 
     @discardableResult
-    public func createList(_ name: String, color: Int?, icon: String?, in db: inout Database) -> String {
+    public func createList(_ name: String, color: Int64?, icon: String?, in db: inout Database) -> String {
         let id = UUID().uuidString
         let order = (db.lists.map(\.sortOrder).max() ?? 0) + 1
         db.lists.append(TaskList(id: id, name: name.trimmingCharacters(in: .whitespaces), color: color, icon: icon,
@@ -311,7 +311,7 @@ public struct TaskOperations: Sendable {
         return id
     }
 
-    public func updateList(_ id: String, name: String, color: Int?, icon: String?, in db: inout Database) {
+    public func updateList(_ id: String, name: String, color: Int64?, icon: String?, in db: inout Database) {
         guard var l = db.lists.find(id) else { return }
         l.name = name.trimmingCharacters(in: .whitespaces); l.color = color; l.icon = icon
         db.lists.upsert(stamp(l))

@@ -18,7 +18,7 @@ struct PriorityBadge: View {
 }
 
 struct ListDot: View {
-    let color: Int?
+    let color: Int64?
     var size: CGFloat = 10
     var body: some View { Circle().fill(Fmt.color(color)).frame(width: size, height: size).accessibilityHidden(true) }
 }

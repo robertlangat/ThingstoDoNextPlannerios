@@ -25,7 +25,7 @@ struct MineScreen: View {
                 } footer: { Text("Recurring tasks count each occurrence separately.") }
 
                 Section("Progress by list") {
-                    let rows: [(String, String, Int?)] = [("", "Inbox", nil)] + model.data.lists.map { ($0.id, $0.name, $0.color) }
+                    let rows: [(String, String, Int64?)] = [("", "Inbox", nil)] + model.data.lists.map { ($0.id, $0.name, $0.color) }
                     ForEach(rows, id: \.0) { id, name, color in
                         let r = stats.byList[id] ?? Ratio(0, 0)
                         if !(id.isEmpty && r.total == 0) {

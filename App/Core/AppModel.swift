@@ -111,11 +111,11 @@ final class AppModel: ObservableObject {
     func setSubtaskDone(_ id: String, _ done: Bool) { perform { db, ops in ops.setSubtaskDone(id, done: done, in: &db) } }
 
     @discardableResult
-    func createList(_ name: String, color: Int?, icon: String?) -> String {
+    func createList(_ name: String, color: Int64?, icon: String?) -> String {
         perform { db, ops in ops.createList(name, color: color, icon: icon, in: &db) }
     }
 
-    func updateList(_ id: String, name: String, color: Int?, icon: String?) {
+    func updateList(_ id: String, name: String, color: Int64?, icon: String?) {
         perform { db, ops in ops.updateList(id, name: name, color: color, icon: icon, in: &db) }
     }
 

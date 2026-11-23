@@ -135,7 +135,7 @@ struct TasksScreen: View {
 struct Chip: View {
     let title: String
     let selected: Bool
-    var color: Int?
+    var color: Int64?
     var trailingIcon: String?
     let action: () -> Void
     var body: some View {
@@ -262,15 +262,15 @@ struct FiltersSheet: View {
 /// Step 2 of "New List": name (required), optional color and icon. Also used for editing.
 struct ListEditorSheet: View {
     let list: TaskList?
-    let onSave: (String, Int?, String?) -> Void
+    let onSave: (String, Int64?, String?) -> Void
     var onDelete: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
-    @State private var color: Int?
+    @State private var color: Int64?
     @State private var icon: String?
     @FocusState private var focused: Bool
 
-    init(list: TaskList?, onSave: @escaping (String, Int?, String?) -> Void, onDelete: (() -> Void)? = nil) {
+    init(list: TaskList?, onSave: @escaping (String, Int64?, String?) -> Void, onDelete: (() -> Void)? = nil) {
         self.list = list; self.onSave = onSave; self.onDelete = onDelete
         _name = State(initialValue: list?.name ?? "")
         _color = State(initialValue: list?.color)

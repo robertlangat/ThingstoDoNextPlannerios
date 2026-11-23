@@ -4,7 +4,7 @@ import Foundation
 public enum JSONValue: Hashable, Sendable, Codable {
     case null
     case bool(Bool)
-    case int(Int)
+    case int(Int64)
     case double(Double)
     case string(String)
     case array([JSONValue])
@@ -14,7 +14,7 @@ public enum JSONValue: Hashable, Sendable, Codable {
         let c = try decoder.singleValueContainer()
         if c.decodeNil() { self = .null }
         else if let b = try? c.decode(Bool.self) { self = .bool(b) }
-        else if let i = try? c.decode(Int.self) { self = .int(i) }
+        else if let i = try? c.decode(Int64.self) { self = .int(i) }
         else if let d = try? c.decode(Double.self) { self = .double(d) }
         else if let s = try? c.decode(String.self) { self = .string(s) }
         else if let a = try? c.decode([JSONValue].self) { self = .array(a) }
@@ -36,20 +36,23 @@ public enum JSONValue: Hashable, Sendable, Codable {
     }
 
     public var string: String? { if case .string(let s) = self { return s }; return nil }
-    public var int: Int? {
+    public var int64: Int64? {
         switch self {
         case .int(let i): return i
-        case .double(let d): return Int(d)
-        case .string(let s): return Int(s)
+        case .double(let d): return d.isFinite ? Int64(d) : nil
+        case .string(let s): return Int64(s)
         default: return nil
         }
     }
+    /// Platform Int (32-bit on Apple Watch hardware); nil if it doesn't fit.
+    public var int: Int? { int64.flatMap { Int(exactly: $0) } }
     public var bool: Bool? { if case .bool(let b) = self { return b }; return nil }
     public var array: [JSONValue]? { if case .array(let a) = self { return a }; return nil }
     public var object: [String: JSONValue]? { if case .object(let o) = self { return o }; return nil }
 
     public static func from(_ s: String?) -> JSONValue { s.map(JSONValue.string) ?? .null }
-    public static func from(_ i: Int?) -> JSONValue { i.map(JSONValue.int) ?? .null }
+    public static func from(_ i: Int?) -> JSONValue { i.map { .int(Int64($0)) } ?? .null }
+    public static func from(_ i: Int64?) -> JSONValue { i.map(JSONValue.int) ?? .null }
 
     public static func parse(_ data: Data) throws -> JSONValue { try JSONDecoder().decode(JSONValue.self, from: data) }
     public static func parse(_ text: String) throws -> JSONValue { try parse(Data(text.utf8)) }

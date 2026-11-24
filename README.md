@@ -51,7 +51,7 @@ Checklist:
    "Things to Do Next Planner", bundle ID `com.robertlangat.thingstodonext` (register it first
    under Certificates, Identifiers & Profiles if it isn't listed), and SKU `thingstodonext-ios-001`.
 4. **App Group**: under Identifiers → App Groups, create `group.com.robertlangat.thingstodonext`.
-   Enable it on the app ID and on `com.robertlangat.thingstodonext.widget`. Also register
+   Enable it on the app ID and on `com.robertlangat.thingstodonext.todaywidget`. Also register
    `com.robertlangat.thingstodonext.watchkitapp`.
 5. **API key for CI uploads**: in App Store Connect → Users and Access → Integrations → App Store
    Connect API, create a key with the **Admin** role and download the `.p8` file. In GitHub, go to
@@ -84,7 +84,7 @@ Requires Xcode 16+.
 
 1. Put your team ID in `Config/Secrets.xcconfig` (`DEVELOPMENT_TEAM = …`) and regenerate the project.
 2. In the Apple Developer portal, create the App Group `group.com.robertlangat.thingstodonext`.
-   Enable it for `com.robertlangat.thingstodonext` and `com.robertlangat.thingstodonext.widget`.
+   Enable it for `com.robertlangat.thingstodonext` and `com.robertlangat.thingstodonext.todaywidget`.
    The app and widget share data through it.
 3. Archive the **Release** configuration in Xcode (it uses the real ad units) and upload it to
    App Store Connect.

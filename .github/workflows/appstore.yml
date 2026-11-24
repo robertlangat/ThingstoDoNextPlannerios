@@ -122,6 +122,9 @@ jobs:
             -allowProvisioningUpdates -authenticationKeyPath ~/private_keys/AuthKey.p8 \
             -authenticationKeyID "$KEY" -authenticationKeyIssuerID "$ISSUER" | xcbeautify
           IPA=$(ls build/export/*.ipa | head -1); echo "Exported $IPA"
+          rm -rf /tmp/ipa && mkdir -p /tmp/ipa && unzip -q "$IPA" -d /tmp/ipa
+          find /tmp/ipa -name Info.plist -path "*.app*/Info.plist" -o -name Info.plist -path "*.appex/Info.plist" | while read f; do
+            echo "BUNDLE: ${f#/tmp/ipa/} -> $(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$f" 2>/dev/null)"; done
           cp ~/private_keys/AuthKey.p8 ~/private_keys/AuthKey_$KEY.p8
           xcrun altool --upload-package "$IPA" -t ios --apple-id 6838722157 \
             --bundle-id com.robertlangat.thingstodonext --bundle-version "${{ github.run_number }}" \

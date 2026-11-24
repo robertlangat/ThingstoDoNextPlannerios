@@ -75,6 +75,15 @@ jobs:
           PLIST
           plutil -lint build/ExportOptions.plist
 
+      - name: Refresh signing profiles
+        env:
+          KEY: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          export KEY=$(printf '%s' "$KEY" | tr -d ' \r\n\t') ISSUER=$(printf '%s' "$ISSUER" | tr -d ' \r\n\t') P8_PATH=~/private_keys/AuthKey.p8
+          python3 -m pip install --quiet --break-system-packages pyjwt cryptography || python3 -m pip install --quiet pyjwt cryptography
+          python3 .github/scripts/refresh_profiles.py
+
       - name: Generate project
         run: brew install xcodegen && xcodegen generate
 

@@ -118,7 +118,10 @@ jobs:
             -authenticationKeyID "$KEY" -authenticationKeyIssuerID "$ISSUER" | xcbeautify
           IPA=$(ls build/export/*.ipa | head -1); echo "Exported $IPA"
           cp ~/private_keys/AuthKey.p8 ~/private_keys/AuthKey_$KEY.p8
-          xcrun altool --upload-app -f "$IPA" -t ios --apiKey "$KEY" --apiIssuer "$ISSUER" --output-format normal
+          xcrun altool --upload-package "$IPA" -t ios --apple-id 6838722157 \
+            --bundle-id com.robertlangat.thingstodonext --bundle-version "${{ github.run_number }}" \
+            --bundle-short-version-string "${{ inputs.version }}" \
+            --apiKey "$KEY" --apiIssuer "$ISSUER" --output-format normal
           echo "Uploaded version ${{ inputs.version }} (build ${{ github.run_number }}). It appears in App Store Connect -> TestFlight after processing (10-30 min)."
 
       - name: Distribution logs (diagnostics)

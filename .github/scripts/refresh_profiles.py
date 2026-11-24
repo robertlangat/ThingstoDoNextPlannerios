@@ -71,3 +71,9 @@ if apps is None:
 else:
     found = apps.get("data", [])
     print(f"App Store Connect app records for {IDS[0]}: " + (", ".join(a["attributes"]["name"] + " (id " + a["id"] + ")" for a in found) or "NONE"))
+    for a in found:
+        v = call("GET", f"/apps/{a['id']}/appStoreVersions?fields[appStoreVersions]=platform,versionString,appStoreState&limit=10")
+        for x in (v or {}).get("data", []):
+            print(f"  version: {x['attributes'].get('platform')} {x['attributes'].get('versionString')} {x['attributes'].get('appStoreState')}")
+        b = call("GET", f"/builds?filter[app]={a['id']}&limit=3&fields[builds]=version,processingState")
+        print("  builds readable by this key: " + ("yes" if b is not None else "NO (key role too low?)"))

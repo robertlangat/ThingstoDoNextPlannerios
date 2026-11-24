@@ -56,6 +56,10 @@ if os.environ.get("REVOKE_CI_CERTS") == "true":
     for c in certs:
         a = c["attributes"]
         label = f"{a.get('name', '')} {a.get('displayName', '')}"
-        if "Created via API" in label:
+        keep = os.environ.get("KEEP_CERTS_EXPIRING", "")
+        if keep and a.get("expirationDate", "").startswith(keep):
+            print(f"  kept: {a.get('certificateType')} {a.get('displayName')} (expires {keep})")
+            continue
+        if "Created via API" in label and a.get("certificateType") == "DEVELOPMENT":
             r = call("DELETE", f"/certificates/{c['id']}")
             print(f"  revoked: {a.get('certificateType')} {a.get('displayName')}" if r is not None else f"  could not revoke {c['id']}")

@@ -114,6 +114,20 @@ jobs:
             -authenticationKeyID "$KEY" -authenticationKeyIssuerID "$ISSUER" | xcbeautify
           echo "Uploaded version ${{ inputs.version }} (build ${{ github.run_number }}). It appears in App Store Connect -> TestFlight after processing (10-30 min)."
 
+      - name: Show signing profiles (diagnostics)
+        if: failure()
+        run: |
+          for d in ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles ~/Library/MobileDevice/Provisioning\ Profiles; do
+            [ -d "$d" ] || continue
+            for f in "$d"/*; do
+              security cms -D -i "$f" > /tmp/p.plist 2>/dev/null || continue
+              name=$(/usr/libexec/PlistBuddy -c "Print :Name" /tmp/p.plist 2>/dev/null)
+              created=$(/usr/libexec/PlistBuddy -c "Print :CreationDate" /tmp/p.plist 2>/dev/null)
+              groups=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:com.apple.security.application-groups" /tmp/p.plist 2>/dev/null | tr -d '\n' | tr -s ' ')
+              echo "PROFILE: $name | created $created | app groups: ${groups:-none}"
+            done
+          done
+
       - name: Clean up key
         if: always()
         run: rm -rf ~/private_keys Config/Secrets.xcconfig

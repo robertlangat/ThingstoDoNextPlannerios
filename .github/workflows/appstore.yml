@@ -32,6 +32,17 @@ jobs:
           for v in TEAM KEY ISSUER P8; do
             if [ -z "${!v}" ]; then echo "::error::Missing secret for $v - see the comment at the top of appstore.yml"; exit 1; fi
           done
+          # Lengths only (never values): Team ID 10, Key ID 10, Issuer ID 36.
+          t=$(printf '%s' "$TEAM" | tr -d ' \r\n\t'); k=$(printf '%s' "$KEY" | tr -d ' \r\n\t'); i=$(printf '%s' "$ISSUER" | tr -d ' \r\n\t')
+          echo "APPLE_TEAM_ID: ${#t} chars (expected 10), ASC_KEY_ID: ${#k} chars (expected 10), ASC_ISSUER_ID: ${#i} chars (expected 36)"
+          [ ${#t} -eq 10 ] || { echo "::error::APPLE_TEAM_ID should be 10 characters (developer.apple.com -> Account -> Membership details -> Team ID)."; exit 1; }
+          [ ${#k} -eq 10 ] || { echo "::error::ASC_KEY_ID should be 10 characters (the Key ID column on the App Store Connect API keys page)."; exit 1; }
+          [ ${#i} -eq 36 ] || { echo "::error::ASC_ISSUER_ID should be 36 characters like 69a6de7e-xxxx-xxxx-xxxx-xxxxxxxxxxxx (shown above the keys table)."; exit 1; }
+          printf '%s\n' "$P8" | tr -d '\r' > /tmp/check.p8
+          grep -q "BEGIN PRIVATE KEY" /tmp/check.p8 || { echo "::error::ASC_KEY_P8 must be the whole AuthKey_XXXX.p8 file, including the -----BEGIN PRIVATE KEY----- and -----END PRIVATE KEY----- lines."; rm -f /tmp/check.p8; exit 1; }
+          openssl pkey -in /tmp/check.p8 -noout || { echo "::error::ASC_KEY_P8 isn't a readable private key. Paste the whole .p8 file again."; rm -f /tmp/check.p8; exit 1; }
+          rm -f /tmp/check.p8
+          echo "All App Store secrets look valid."
 
       - name: Write signing key and build settings
         env:
@@ -42,7 +53,9 @@ jobs:
           AIURL: ${{ secrets.AI_BACKEND_URL }}
         run: |
           mkdir -p ~/private_keys build
-          printf '%s\n' "$P8" > ~/private_keys/AuthKey.p8
+          printf '%s\n' "$P8" | tr -d '\r' > ~/private_keys/AuthKey.p8
+          TEAM=$(printf '%s' "$TEAM" | tr -d ' \r\n\t')
+          echo "TEAM_ID=$TEAM" >> "$GITHUB_ENV"
           {
             echo "DEVELOPMENT_TEAM = $TEAM"
             [ -n "$GID" ] && echo "GOOGLE_IOS_CLIENT_ID = $GID"
@@ -71,6 +84,7 @@ jobs:
           ISSUER: ${{ secrets.ASC_ISSUER_ID }}
         run: |
           set -o pipefail
+          KEY=$(printf '%s' "$KEY" | tr -d ' \r\n\t'); ISSUER=$(printf '%s' "$ISSUER" | tr -d ' \r\n\t')
           xcodebuild -project ThingsToDoNext.xcodeproj -scheme ThingsToDoNext -configuration Release \
             -destination 'generic/platform=iOS' -archivePath build/ThingsToDoNext.xcarchive \
             -allowProvisioningUpdates -authenticationKeyPath ~/private_keys/AuthKey.p8 \
@@ -84,6 +98,7 @@ jobs:
           ISSUER: ${{ secrets.ASC_ISSUER_ID }}
         run: |
           set -o pipefail
+          KEY=$(printf '%s' "$KEY" | tr -d ' \r\n\t'); ISSUER=$(printf '%s' "$ISSUER" | tr -d ' \r\n\t')
           xcodebuild -exportArchive -archivePath build/ThingsToDoNext.xcarchive \
             -exportOptionsPlist build/ExportOptions.plist -exportPath build/export \
             -allowProvisioningUpdates -authenticationKeyPath ~/private_keys/AuthKey.p8 \

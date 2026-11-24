@@ -70,7 +70,7 @@ jobs:
           cat > build/ExportOptions.plist <<PLIST
           <plist version="1.0"><dict>
             <key>method</key><string>app-store-connect</string>
-            <key>destination</key><string>upload</string>
+            <key>destination</key><string>export</string>
             <key>teamID</key><string>$TEAM</string>
             <key>signingStyle</key><string>automatic</string>
             <key>uploadSymbols</key><true/>
@@ -116,7 +116,17 @@ jobs:
             -exportOptionsPlist build/ExportOptions.plist -exportPath build/export \
             -allowProvisioningUpdates -authenticationKeyPath ~/private_keys/AuthKey.p8 \
             -authenticationKeyID "$KEY" -authenticationKeyIssuerID "$ISSUER" | xcbeautify
+          IPA=$(ls build/export/*.ipa | head -1); echo "Exported $IPA"
+          cp ~/private_keys/AuthKey.p8 ~/private_keys/AuthKey_$KEY.p8
+          xcrun altool --upload-app -f "$IPA" -t ios --apiKey "$KEY" --apiIssuer "$ISSUER" --output-format normal
           echo "Uploaded version ${{ inputs.version }} (build ${{ github.run_number }}). It appears in App Store Connect -> TestFlight after processing (10-30 min)."
+
+      - name: Distribution logs (diagnostics)
+        if: failure()
+        run: |
+          for f in $(find "${TMPDIR:-/tmp}" /var/folders -name "IDEDistribution*.log" 2>/dev/null | head -5); do
+            echo "== $f"; grep -iE "error|fail|status|code=|reason" "$f" | grep -viE "token|bearer|authorization" | head -60
+          done
 
       - name: Show signing profiles (diagnostics)
         if: failure()

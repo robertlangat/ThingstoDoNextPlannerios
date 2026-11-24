@@ -63,3 +63,11 @@ if os.environ.get("REVOKE_CI_CERTS") == "true":
         if "Created via API" in label and a.get("certificateType") == "DEVELOPMENT":
             r = call("DELETE", f"/certificates/{c['id']}")
             print(f"  revoked: {a.get('certificateType')} {a.get('displayName')}" if r is not None else f"  could not revoke {c['id']}")
+
+q = urllib.parse.urlencode({"filter[bundleId]": IDS[0], "fields[apps]": "name,bundleId,sku"})
+apps = call("GET", f"/apps?{q}")
+if apps is None:
+    print("::warning::Could not read apps. The API key may need the App Manager or Admin role.")
+else:
+    found = apps.get("data", [])
+    print(f"App Store Connect app records for {IDS[0]}: " + (", ".join(a["attributes"]["name"] + " (id " + a["id"] + ")" for a in found) or "NONE"))

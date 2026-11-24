@@ -42,3 +42,20 @@ for p in profiles:
     if any(name.endswith(": " + i) or name.endswith(i) for i in IDS) and "Team Provisioning Profile" in name:
         r = call("DELETE", f"/profiles/{p['id']}")
         print(f"deleted stale profile: {name}" if r is not None else f"could not delete: {name}")
+
+# Certificates: each CI run starts on a fresh Mac with no private keys, so automatic signing creates a
+# new certificate every time ("Created via API"). Those are useless once the run ends. List them, and
+# revoke them only when the workflow was started with revoke_ci_certs=true.
+q = urllib.parse.urlencode({"limit": 200, "fields[certificates]": "name,displayName,certificateType,expirationDate"})
+certs = (call("GET", f"/certificates?{q}") or {}).get("data", [])
+print(f"certificates on the account: {len(certs)}")
+for c in certs:
+    a = c["attributes"]
+    print(f"  CERT: {a.get('certificateType')} | {a.get('displayName') or a.get('name')} | expires {a.get('expirationDate', '')[:10]}")
+if os.environ.get("REVOKE_CI_CERTS") == "true":
+    for c in certs:
+        a = c["attributes"]
+        label = f"{a.get('name', '')} {a.get('displayName', '')}"
+        if "Created via API" in label:
+            r = call("DELETE", f"/certificates/{c['id']}")
+            print(f"  revoked: {a.get('certificateType')} {a.get('displayName')}" if r is not None else f"  could not revoke {c['id']}")

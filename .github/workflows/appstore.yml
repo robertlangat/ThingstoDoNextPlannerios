@@ -14,6 +14,10 @@ on:
         description: "Version shown on the App Store (e.g. 1.0.0)"
         required: true
         default: "1.0.0"
+      revoke_ci_certs:
+        description: "Revoke certificates named 'Created via API' (made by earlier CI runs) first"
+        type: boolean
+        default: false
 
 jobs:
   upload:
@@ -82,7 +86,7 @@ jobs:
         run: |
           export KEY=$(printf '%s' "$KEY" | tr -d ' \r\n\t') ISSUER=$(printf '%s' "$ISSUER" | tr -d ' \r\n\t') P8_PATH=~/private_keys/AuthKey.p8
           python3 -m pip install --quiet --break-system-packages pyjwt cryptography || python3 -m pip install --quiet pyjwt cryptography
-          python3 .github/scripts/refresh_profiles.py
+          REVOKE_CI_CERTS=${{ inputs.revoke_ci_certs }} python3 .github/scripts/refresh_profiles.py
 
       - name: Generate project
         run: brew install xcodegen && xcodegen generate

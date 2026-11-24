@@ -12,14 +12,14 @@ concurrency:
 
 jobs:
   core:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
       - name: Core logic tests (PlannerCore)
         run: swift test --package-path Packages/PlannerCore
 
   app:
-    runs-on: macos-15
+    runs-on: macos-26
     needs: core
     timeout-minutes: 60
     permissions:

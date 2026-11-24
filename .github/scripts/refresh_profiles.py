@@ -5,7 +5,7 @@ import json, os, sys, time, urllib.request, urllib.parse
 import jwt  # PyJWT
 
 API = "https://api.appstoreconnect.apple.com/v1"
-IDS = ["com.robertlangat.thingstodonext", "com.robertlangat.thingstodonext.todaywidget", "com.robertlangat.thingstodonext.watchkitapp"]
+IDS = ["com.robertlangat.thingstodonext", "com.robertlangat.thingstodonext.widget", "com.robertlangat.thingstodonext.watchkitapp"]
 
 key = open(os.environ["P8_PATH"]).read()
 now = int(time.time())

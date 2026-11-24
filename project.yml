@@ -171,7 +171,7 @@ targets:
       - package: PlannerCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.robertlangat.thingstodonext.todaywidget
+        PRODUCT_BUNDLE_IDENTIFIER: com.robertlangat.thingstodonext.widget
         PRODUCT_NAME: ThingsToDoNextWidget
         TARGETED_DEVICE_FAMILY: "1,2"
     entitlements:

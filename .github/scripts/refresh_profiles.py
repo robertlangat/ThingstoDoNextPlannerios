@@ -70,7 +70,7 @@ if apps is None:
     print("::warning::Could not read apps. The API key may need the App Manager or Admin role.")
 else:
     found = apps.get("data", [])
-    print(f"App Store Connect app records for {IDS[0]}: " + (", ".join(a["attributes"]["name"] + " (id " + a["id"] + ")" for a in found) or "NONE"))
+    print(f"App Store Connect app records for {IDS[0]}: " + (", ".join(a["attributes"]["name"] + " (id " + a["id"] + ", bundle ID " + a["attributes"].get("bundleId", "?") + ")" for a in found) or "NONE"))
     for a in found:
         v = call("GET", f"/apps/{a['id']}/appStoreVersions?fields[appStoreVersions]=platform,versionString,appStoreState&limit=10")
         for x in (v or {}).get("data", []):

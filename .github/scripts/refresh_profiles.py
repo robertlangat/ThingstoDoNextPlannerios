@@ -77,3 +77,9 @@ else:
             print(f"  version: {x['attributes'].get('platform')} {x['attributes'].get('versionString')} {x['attributes'].get('appStoreState')}")
         b = call("GET", f"/builds?filter[app]={a['id']}&limit=3&fields[builds]=version,processingState")
         print("  builds readable by this key: " + ("yes" if b is not None else "NO (key role too low?)"))
+    exact = [a for a in found if a["attributes"].get("bundleId") == IDS[0]]
+    if exact and os.environ.get("GITHUB_ENV"):
+        open(os.environ["GITHUB_ENV"], "a").write(f"APP_APPLE_ID={exact[0]['id']}\n")
+        print(f"Using App Store app id {exact[0]['id']}")
+    elif not exact:
+        print(f"::error::No App Store Connect app uses bundle ID {IDS[0]} yet (App Information -> Bundle ID).")
